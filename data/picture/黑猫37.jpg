@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error>
+  <Code>NoSuchKey</Code>
+  <Message>对象“2022/0429/7640e99cj00rb2xst000yc000rs00fng.jpg”不存在，请指定正确的对象</Message>
+  <Resource>/dingyue/2022/0429/7640e99cj00rb2xst000yc000rs00fng.jpg</Resource>
+  <RequestId>ce966108-c044-4070-8a41-281102237efc</RequestId>
+</Error>
