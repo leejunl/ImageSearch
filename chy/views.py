@@ -46,7 +46,7 @@ def image_search_function(image_path, index_path):
     
     search_results = []
     for i in range(len(rank_ids)):
-        if rank_scores[i] > 0.40:  # 设定相似度阈值
+        if rank_scores[i] > 0.64:  # 设定相似度阈值
             search_results.append({'filename': img_names[rank_ids[i]].decode('utf-8'), 'source':'','score':float(rank_scores[i])})
         print(img_names[rank_ids[i]].decode('utf-8'),float(rank_scores[i]))
     return search_results
@@ -86,6 +86,10 @@ def image_search_view(request):
 
 
 def Spyder(request):
-    if request.method == 'GET':
-        spyder(request.GET.get('word'))
-    return JsonResponse({'msg':'OK'})
+    if request.method == 'POST':
+        spyder(request.POST.get('word'),request.POST.get('url'),request.POST.get('cookies'))
+        try:
+            spyder(request.POST.get('word'),request.POST.get('url'),request.POST.get('cookies'))
+        except:
+            return JsonResponse({'msg':'error','code':500})
+    return JsonResponse({'msg':'OK','code':200})
