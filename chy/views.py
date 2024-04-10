@@ -90,9 +90,9 @@ def Spyder(request):
     if request.method == 'POST':
         if request.POST.get('url')!='':
             settings.SPYDER_URL = request.POST.get('url')
-            settings.COOKIES = request.POST.get('cookies')
+            settings.SPYDER_COOKIES = request.POST.get('cookies')
         else:
-            spyder(request.POST.get('word'),settings.SPYDER_URL,settings.COOKIES))
+            spyder(request.POST.get('word'),settings.SPYDER_URL,settings.SPYDER_COOKIES)
         try:
             spyder(request.POST.get('word'),request.POST.get('url'),request.POST.get('cookies'))
         except:
