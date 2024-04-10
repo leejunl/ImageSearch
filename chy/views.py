@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .utils import init_model, VGGNet,generate_h5_file,spyder
 import h5py
 import numpy as np
+from django.conf import settings
 
 # 加载图像特征和图像名称
 def load_indexed_data(index_path):
@@ -87,7 +88,11 @@ def image_search_view(request):
 
 def Spyder(request):
     if request.method == 'POST':
-        spyder(request.POST.get('word'),request.POST.get('url'),request.POST.get('cookies'))
+        if request.POST.get('url')!='':
+            settings.SPYDER_URL = request.POST.get('url')
+            settings.COOKIES = request.POST.get('cookies')
+        else:
+            spyder(request.POST.get('word'),settings.SPYDER_URL,settings.COOKIES))
         try:
             spyder(request.POST.get('word'),request.POST.get('url'),request.POST.get('cookies'))
         except:
