@@ -49,7 +49,7 @@ def image_search_function(image_path, index_path):
     for i in range(len(rank_ids)):
         if rank_scores[i] > 0.64:  # 设定相似度阈值
             search_results.append({'filename': img_names[rank_ids[i]].decode('utf-8'), 'source':'','score':float(rank_scores[i])})
-        print(img_names[rank_ids[i]].decode('utf-8'),float(rank_scores[i]))
+        print('图片名称：',img_names[rank_ids[i]].decode('utf-8'),'  相似度：',float(rank_scores[i]))
     return search_results
 
 
@@ -57,7 +57,7 @@ def image_search_function(image_path, index_path):
 def image_search_view(request):
     if request.method == 'POST' and request.FILES.get('image'):
         uploaded_image = request.FILES['image']
-        print(uploaded_image)
+        print('接收到上传的图片：',uploaded_image)
         # 确保临时文件夹存在，如果不存在则创建
         temp_folder_path = './data/search'
         os.makedirs(temp_folder_path, exist_ok=True)
@@ -89,12 +89,15 @@ def image_search_view(request):
 def Spyder(request):
     if request.method == 'POST':
         if request.POST.get('url')!='':
+            print('前端传入url和cookies，原因： 当前保存的值已过期')
+            print('传入的url值： ',request.POST.get('url'))
             settings.SPYDER_URL = request.POST.get('url')
             settings.SPYDER_COOKIES = request.POST.get('cookies')
         else:
-            spyder(request.POST.get('word'),settings.SPYDER_URL,settings.SPYDER_COOKIES)
-        try:
-            spyder(request.POST.get('word'),request.POST.get('url'),request.POST.get('cookies'))
-        except:
-            return JsonResponse({'msg':'error','code':500})
+            print('前端未传入url和cookies，原因： 当前保存的值未过期')
+            print('原有的url值: ',settings.SPYDER_URL)
+            pass
+            
+        spyder(request.POST.get('word'),settings.SPYDER_URL,settings.SPYDER_COOKIES)
+
     return JsonResponse({'msg':'OK','code':200})
