@@ -2,10 +2,10 @@ import os
 import base64
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .utils import init_model, VGGNet,generate_h5_file,spyder
+from .utils import init_model, VGGNet,generate_h5_file,spyder,save_settings_to_file,load_settings_from_file
 import h5py
 import numpy as np
-from django.conf import settings
+
 
 # 加载图像特征和图像名称
 def load_indexed_data(index_path):
@@ -88,16 +88,23 @@ def image_search_view(request):
 
 def Spyder(request):
     if request.method == 'POST':
-        if request.POST.get('url')!='':
+        word = request.POST.get('word')
+        istext = request.POST.get('istext')
+        if request.POST.get('url') != '':
             print('前端传入url和cookies，原因： 当前保存的值已过期')
-            print('传入的url值： ',request.POST.get('url'))
-            settings.SPYDER_URL = request.POST.get('url')
-            settings.SPYDER_COOKIES = request.POST.get('cookies')
+            print('传入的url值： ', request.POST.get('url'))
+            url = request.POST.get('url')
+            cookies = request.POST.get('cookies')
+
+            # 将值保存到文件中
+            save_settings_to_file(url, cookies)
         else:
-            print('前端未传入url和cookies，原因： 当前保存的值未过期')
-            print('原有的url值: ',settings.SPYDER_URL)
-            pass
-            
-        spyder(request.POST.get('word'),settings.SPYDER_URL,settings.SPYDER_COOKIES)
+            # 如果没有传入新的URL和cookies，尝试从文件中加载
+            url, cookies = load_settings_from_file()
+            print('加载的URL值：', url)
+            print('加载的cookies值：', cookies)
+            # 继续使用从文件中加载的设置
+        spyder(word,url,cookies,istext)
 
     return JsonResponse({'msg':'OK','code':200})
+

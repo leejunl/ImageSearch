@@ -8,7 +8,7 @@ import os
 import h5py
 import re
 import requests
-
+import json
 
 class VGGNet:
     def __init__(self):
@@ -33,7 +33,7 @@ class VGGNet:
         
         参数:
         - img_path: 图像文件的路径。
-        
+
         返回:
         - norm_feat: 经过处理的图像特征。
         """
@@ -50,7 +50,7 @@ class VGGNet:
 def get_imlist(path):
     """
     获取指定路径下所有的图像文件列表。
-    
+
     参数:
     - path: 文件路径。
     
@@ -126,10 +126,20 @@ def generate_h5_file(database_path, index_path):
         h5f.create_dataset('dataset_1', data=feats)
         h5f.create_dataset('dataset_2', data=np.array(names, dtype=h5py.string_dtype(encoding='utf-8')))
 
+def save_settings_to_file(url, cookies):
+    data = {'url': url, 'cookies': cookies}
+    with open('spyder_settings.json', 'w') as f:
+        json.dump(data, f)
 
+def load_settings_from_file():
+    try:
+        with open('spyder_settings.json', 'r') as f:
+            settings = json.load(f)
+            return settings.get('url', ''), settings.get('cookies', '')
+    except FileNotFoundError:
+        return '', ''
 
-
-def spyder(search_word,url,cookie):
+def spyder(search_word,url,cookie,istext):
     num = 0  # 给图片名字加数字
     
     header = {
@@ -140,12 +150,12 @@ def spyder(search_word,url,cookie):
             'Accept-Language': 'zh-CN,zh;q=0.9'
         }  # 请求头
         # 图片页面的url
-    print(url)
-    url = url+search_word
-    print('第一个url', url)
+    print('组合前的url:',url)
+    urls = url+search_word
+    print('组合后的url', urls)
     # 通过requests库请求到了页面
-    html = requests.get(url, headers=header, verify=False)
-    # 防止乱码
+    html = requests.get(urls, headers=header, verify=False)
+    # 防止乱码s
     html.encoding = 'utf8'
     # 打印页面出来看看
 
@@ -156,6 +166,7 @@ def spyder(search_word,url,cookie):
         os.mkdir(picture_path)
 
     res = re.findall('"objURL":"(.*?)"', html)  # 正则表达式，筛选出html页面中符合条件的图片源代码地址url
+    images = []
     for i in res:  # 遍历
         num = num + 1  # 数字加1，这样图片名字就不会重复了
         picture = requests.get(i, headers=header, verify=False)  # 得到每一张图片的大图
@@ -163,3 +174,9 @@ def spyder(search_word,url,cookie):
         with open(file_name, "wb") as f:  # 以二进制写入的方式打开图片
             f.write(picture.content)  # 往图片里写入爬下来的图片内容，content是写入内容的意思
         print(i)  # 看看有哪些url
+        if istext=='yes':
+            images.append(f'{search_word}{num}.jpg')
+
+        else:
+            pass
+    print('文字已查询到的图片列表：',images)
