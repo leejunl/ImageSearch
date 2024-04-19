@@ -8,6 +8,7 @@ import os
 import h5py
 import re
 import requests
+import time
 import json
 
 class VGGNet:
@@ -139,44 +140,83 @@ def load_settings_from_file():
     except FileNotFoundError:
         return '', ''
 
-def spyder(search_word,url,cookie,istext):
-    num = 0  # 给图片名字加数字
+
+def spyder(search_word, url, cookie, istext, error_count=0, data=None):
+    if data is None:
+        data = []  # 初始化结果数据
+
+    num = 1  # 给图片名字加数字
     
     header = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36',
-            'Cookie': cookie,          # 这里需要根据自己的浏览器情况自行填写
-            'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'zh-CN,zh;q=0.9'
-        }  # 请求头
-        # 图片页面的url
-    print('组合前的url:',url)
-    urls = url+search_word
-    print('组合后的url', urls)
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36',
+        'Cookie': cookie,  # 这里需要根据自己的浏览器情况自行填写
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9'
+    }  # 请求头
+    # 图片页面的url
+    urls = url + search_word
     # 通过requests库请求到了页面
-    html = requests.get(urls, headers=header, verify=False)
-    # 防止乱码s
-    html.encoding = 'utf8'
-    # 打印页面出来看看
+    print('=====================  开始 爬取   ============================')
+    try:
+        html = requests.get(urls, headers=header, verify=False)
+        # 防止乱码
+        html.encoding = 'utf8'
+        # 打印页面出来看看
+        html = html.text
 
-    html = html.text
+        picture_path = './data/picture'
+        if not os.path.exists(picture_path):
+            os.mkdir(picture_path)
 
-    picture_path = './data/picture'
-    if not os.path.exists(picture_path):
-        os.mkdir(picture_path)
+        res = re.findall('"objURL":"(.*?)"', html)  # 正则表达式，筛选出html页面中符合条件的图片源代码地址url
+        images = []
+        print('检索到的url:',res)  # 看看有哪些url
+        print('爬取到的URL数===========>:',len(res))
+        print('循环次数================>:',5 if len(res)>=5 else len(res))
+        
+        if len(res)==0:
+            print('=====================  爬取结束   ============================')
+            return {'code': 500,'data':[]},0
+        
+        for i in res:  # 遍历
+            print('当前：',num,i)
+            if num >= (5 if len(res)>=5 else len(res)):  # 设置只返回10张正确的图片
+                print('=====================  爬取结束   ============================')
+                print('data的值为：',data)
+                print('error_count的值为：',error_count)
+                return {'code': 200, 'data': data}, error_count  # 返回成功的同时返回当前的 error_count 值和结果数据
+            num = num + 1  # 数字加1，这样图片名字就不会重复了
+            print('当前次数：',num,istext)
+            if istext == 'yes':
+                
+                images.append({'filename': f'{search_word}{num}.jpg', 'source': i})  # 将图片URL添加到结果数据中
+                data= images  # 将当前的图片数据添加到结果数据中
+                continue  # 如果是文字模式，直接跳过保存图片的部分
+            picture = requests.get(i, headers=header, verify=False)  # 得到每一张图片的大图
+            file_name = f'./data/picture/{search_word}{num}.jpg'  # 给下载下来的图片命名。加数字，是为了名字不重复
+            with open(file_name, "wb") as f:  # 以二进制写入的方式打开图片
+                f.write(picture.content)  # 往图片里写入爬下来的图片内容，content是写入内容的意思
+            
+               
+    except requests.exceptions.ConnectionError as e:
+        print('连接错误次数:', error_count)
+        error_count += 1
+        if error_count >= 5:
+            print('连接错误次数过多，爬取失败')
+            return {'code': 500, 'data': data}, error_count  # 返回500错误并且返回新的 error_count 值和结果数据
+        time.sleep(1)  # 等待1秒后继续尝试
+        return spyder(search_word, url, cookie, istext, error_count, data)  # 递归调用自身，重新尝试爬取
 
-    res = re.findall('"objURL":"(.*?)"', html)  # 正则表达式，筛选出html页面中符合条件的图片源代码地址url
-    images = []
-    for i in res:  # 遍历
-        num = num + 1  # 数字加1，这样图片名字就不会重复了
-        picture = requests.get(i, headers=header, verify=False)  # 得到每一张图片的大图
-        file_name = f'./data/picture/{search_word}{num}.jpg'  # 给下载下来的图片命名。加数字，是为了名字不重复
-        with open(file_name, "wb") as f:  # 以二进制写入的方式打开图片
-            f.write(picture.content)  # 往图片里写入爬下来的图片内容，content是写入内容的意思
-        print(i)  # 看看有哪些url
-        if istext=='yes':
-            images.append(f'{search_word}{num}.jpg')
+    except Exception as e:
+        print('发生异常:', e)
+        import traceback
+        traceback.print_exc()
+        error_count += 1
+        if error_count >= 5:
+            print('爬取失败')
+            return {'code': 500, 'data': data}, error_count  # 返回500错误并且返回新的 error_count 值和结果数据
+        time.sleep(1)  # 等待1秒后继续尝试
+        return spyder(search_word, url, cookie, istext, error_count, data)  # 递归调用自身，重新尝试爬取
 
-        else:
-            pass
-    print('文字已查询到的图片列表：',images)
+    #return {'code': 200, 'data': data}, error_count  # 在发生异常后返回错误代码和结果数据

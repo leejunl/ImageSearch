@@ -85,14 +85,11 @@ def image_search_view(request):
     else:
         return JsonResponse({'error': '请上传图片文件！'})
 
-
 def Spyder(request):
     if request.method == 'POST':
         word = request.POST.get('word')
         istext = request.POST.get('istext')
-        if request.POST.get('url') != '':
-            print('前端传入url和cookies，原因： 当前保存的值已过期')
-            print('传入的url值： ', request.POST.get('url'))
+        if request.POST.get('cookies') != '':
             url = request.POST.get('url')
             cookies = request.POST.get('cookies')
 
@@ -101,10 +98,11 @@ def Spyder(request):
         else:
             # 如果没有传入新的URL和cookies，尝试从文件中加载
             url, cookies = load_settings_from_file()
-            print('加载的URL值：', url)
-            print('加载的cookies值：', cookies)
             # 继续使用从文件中加载的设置
-        spyder(word,url,cookies,istext)
-
-    return JsonResponse({'msg':'OK','code':200})
-
+        data, error_count = spyder(word, url, cookies, istext)  
+        print('错误计数器:', error_count)
+        print('data:', data)
+        if data['code'] == 200:
+            return JsonResponse({'msg':'OK','code':200,'data':data})
+        else:
+            return JsonResponse({'msg':'FAILD','code':500,'data':data})
