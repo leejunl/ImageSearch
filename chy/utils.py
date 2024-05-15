@@ -169,7 +169,11 @@ def spyder(search_word, url, cookie, istext, error_count=0, data=None):
         if not os.path.exists(picture_path):
             os.mkdir(picture_path)
 
-        res = re.findall('"objURL":"(.*?)"', html)  # 正则表达式，筛选出html页面中符合条件的图片源代码地址url
+         # 正则表达式，筛选出html页面中符合条件的图片源代码地址url
+        res = re.findall('"middleURL": "(.*?)"', html) 
+        print(res)
+        # 过滤掉空值或只包含空白字符的匹配项  
+        res = [match for match in res if match.strip()]  
         images = []
         print('检索到的url:',res)  # 看看有哪些url
         print('爬取到的URL数===========>:',len(res))
